@@ -8,8 +8,10 @@ set(DESCRIPTION "Common UNIX IO library for C++11")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11  -Wall")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -O3 -march=native")
 
-set(SOURCE_FILES  src/io.h src/io.cpp src/concurrent.h src/async.h src/async.cpp)
-set(HEADERS_LIST  src/io.h src/concurrent.h src/async.h)
+include(CMake-install-headers.txt)
+
+set(SOURCE_FILES  src/io.cpp src/async.cpp)
+set(HEADERS_LIST  ${IO_HEADERS})
 set(RUNTIME_DEPS )
 
 if(NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE MATCHES "[Dd][Ee][Bb][Uu][Gg]")
@@ -19,7 +21,6 @@ endif()
 
 if(EXPERIMENTAL)
     list(APPEND SOURCE_FILES src/experimental.h src/experimental.cpp)
-    list(APPEND HEADERS_LIST src/experimental.h)
 endif()
 
 # Shared library
@@ -34,7 +35,7 @@ set_target_properties(${PROJECT_NAME}-StaticLib PROPERTIES OUTPUT_NAME ${PROJECT
 target_compile_definitions(${PROJECT_NAME}-StaticLib PUBLIC BUILD_VERSION="${VERSION}")
 target_link_libraries(${PROJECT_NAME}-StaticLib ${LIBS})
 
-install(FILES ${HEADERS_LIST} DESTINATION /usr/include/io/)
+IO_INSTALL_HEADERS(/usr/include/io/)
 install(TARGETS ${PROJECT_NAME}-SharedLib ${PROJECT_NAME}-StaticLib DESTINATION /usr/local/lib/)
 
 # Setup DEBIAN control files
