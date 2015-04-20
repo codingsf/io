@@ -11,6 +11,19 @@
 #include <cstring>
 
 namespace io {
+    Storage::Storage(int fd, bool close_at_end) : descriptor_(fd), auto_close_(close_at_end) { }
+
+    Storage::Storage() { }
+
+    Storage::Storage(Storage &&that) : descriptor_(that.descriptor_) {
+        that.descriptor_ = -1;
+    }
+
+    Storage &Storage::operator=(Storage &&that) {
+        std::swap(descriptor_, that.descriptor_);
+        return *this;
+    }
+
     void Storage::close() {
         if (descriptor_ >= 0) {
             ::close(descriptor_);
@@ -207,4 +220,6 @@ namespace io {
         static std::string version_ = BUILD_VERSION;
         return version_;
     }
+
+
 }

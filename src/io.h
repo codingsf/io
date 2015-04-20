@@ -12,6 +12,14 @@ namespace io {
     const std::string &version();
 
     struct Storage {
+        Storage();
+
+        explicit Storage(int fd, bool close_at_end = false);
+
+        Storage(Storage &&that);
+
+        Storage &operator=(Storage &&);
+
         /**
          * Get active file descriptor
          */
@@ -39,6 +47,10 @@ namespace io {
     protected:
         int descriptor_ = -1;
     private:
+        Storage(const Storage &) = delete;
+
+        Storage &operator=(const Storage &) = delete;
+
         bool auto_close_ = false;
 
     };
