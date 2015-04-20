@@ -11,6 +11,22 @@ namespace io {
         set_auto_close(true);
     }
 
+    Epoll::Epoll(Epoll &&that) {
+        descriptor_ = that.descriptor_;
+        events_cache_ = that.events_cache_;
+        callbacks_ = that.callbacks_;
+        that.descriptor_ = -1;
+        that.events_cache_.clear();
+        that.callbacks_.clear();
+    }
+
+    Epoll &Epoll::operator=(Epoll &&that) {
+        std::swap(descriptor_, that.descriptor_);
+        std::swap(events_cache_, that.events_cache_);
+        std::swap(callbacks_, that.callbacks_);
+        return *this;
+    }
+
     bool Epoll::add(int fd, uint32_t events_filter, const Epoll::Callback &callback) {
         if (!has_valid_descriptor() || fd < 0)return false;
         epoll_event event;
@@ -56,4 +72,78 @@ namespace io {
             set_error();
         return res;
     }
+
+    AsyncSocketServer::AsyncSocketServer(io::Epoll &epoll, io::ConnectionManager::Ptr serv_con_) : poller_(epoll),
+                                                                                                   server_(serv_con_),
+                                                                                                   server_fd_(
+                                                                                                           serv_con_->descriptor()) {
+        running_ = poller_.has_valid_descriptor() &&
+                   serv_con_->has_valid_descriptor() &&
+                   poller_.add(server_fd_, EPOLLIN | EPOLLERR | EPOLLHUP | EPOLLRDHUP,
+                               &AsyncSocketServer::on_server_event,
+                               this);
+        if (running_) on_server_start();
+    }
+
+    void AsyncSocketServer::stop() {
+        if (running_) {
+            on_server_stopping();
+            {
+                auto lock = lock_collection();
+                for (auto &it:clients_)
+                    it.second->close();
+                clients_.clear();
+                poller_.remove(server_fd_);
+            }
+            running_ = false;
+            on_server_stopped();
+        }
+    }
+
+    AsyncSocketServer::~AsyncSocketServer() {
+        stop();
+    }
+
+    void AsyncSocketServer::on_server_event(io::Epoll &, uint32_t events, int fd) {
+        if (events & EPOLLERR) {
+            stop();
+        } else if (events & EPOLLIN) {
+            int client_fd = server_->next_descriptor();
+            if (client_fd < 0) stop();
+            else {
+                auto client = io::FileStream::create(client_fd);
+                on_client_connected(client);
+                {
+                    std::lock_guard<std::mutex> guard(lock_);
+                    clients_[client_fd] = client;
+                }
+            }
+        }
+    }
+
+    void AsyncSocketServer::on_client_event(io::Epoll &, uint32_t events, int client_fd) {
+        auto client = find_client_by_descriptor(client_fd);
+        if (!client) return; //Already removed
+        if (events & (EPOLLERR)) {
+            client->close();
+        } else if (events & (EPOLLHUP | EPOLLRDHUP)) {
+            on_client_disconnected(client);
+            client->close();
+            {
+                std::lock_guard<std::mutex> guard(lock_);
+                clients_.erase(client_fd);
+                poller_.remove(client_fd);
+            }
+        } else if (events & (EPOLLIN)) {
+            on_client_data_ready(client);
+        } else {
+            //STUB for future events
+        }
+    }
+
+    std::unique_lock<std::mutex> AsyncSocketServer::lock_collection() {
+        return std::unique_lock<std::mutex>(lock_);
+    }
+
+
 }

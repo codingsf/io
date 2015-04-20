@@ -6,9 +6,11 @@
 #define IO_ASYNC_H
 
 #include "io.h"
+#include "application.h"
 #include <unordered_map>
 #include <functional>
 #include <sys/epoll.h>
+#include <mutex>
 
 namespace io {
     /**
@@ -22,6 +24,16 @@ namespace io {
          * - descriptor
          */
         using Callback = std::function<void(Epoll &, uint32_t, int)>;
+
+        /**
+         * Move semantic
+         */
+        Epoll(Epoll &&that);
+
+        /**
+         * Move semantic
+         */
+        Epoll &operator=(Epoll &&that);
 
         /**
          * Initialize epoll instance with specified `flags` and events cache size. Check errors after it
@@ -83,5 +95,109 @@ namespace io {
 
         std::unordered_map<int, Callback> callbacks_;
     };
+
+
+    /**
+     * Abstract Epoll based async socket server
+     */
+    struct AsyncSocketServer {
+
+        /**
+         * Stop server, remove from epoll, close all clients and free allocated resources. Collection locked here
+         */
+        void stop();
+
+        /**
+         * Is server running
+         */
+        inline bool running() const { return running_; }
+
+        /**
+         * Get connection manager
+         */
+        inline io::ConnectionManager::Ptr server() { return server_; }
+
+        /**
+         * Stop server
+         */
+        virtual ~AsyncSocketServer();
+
+    protected:
+        /**
+         * Create socket server and adds callbacks to EPOLL
+         */
+        AsyncSocketServer(io::Epoll &epoll, io::ConnectionManager::Ptr serv_con_);
+
+
+        /**
+         * Collection of clients sockets
+         */
+        std::unordered_map<int, io::FileStream::Ptr> clients_;
+
+        /**
+         * Lock collection for access from other threads
+         */
+        std::unique_lock<std::mutex> lock_collection();
+
+        /**
+         * Calls when server started and running
+         */
+        virtual void on_server_start() { }
+
+        /**
+         * Calls when server about to close
+         */
+        virtual void on_server_stopping() { }
+
+        /**
+         * Calls when all resources removed and server stopped
+         */
+        virtual void on_server_stopped() { }
+
+        /**
+         * Calls when new clients connected, but not added to collection yet
+         */
+        virtual void on_client_connected(io::FileStream::Ptr client) { }
+
+        /**
+         * Calls when client disconnected, but not remove from collection yet
+         */
+        virtual void on_client_disconnected(io::FileStream::Ptr client) { }
+
+        /**
+         * Calls when client sends some data
+         */
+        virtual void on_client_data_ready(io::FileStream::Ptr client) { }
+
+        /**
+         * Find client socket by descriptor or return null. Thread safe
+         */
+        inline io::FileStream::Ptr find_client_by_descriptor(int fd) const {
+            std::lock_guard<std::mutex> guard(lock_);
+            auto client = clients_.find(fd);
+            if (client == clients_.end())return nullptr;
+            return (*client).second;
+        }
+
+    private:
+        /**
+         * Collection lock
+         */
+        mutable std::mutex lock_;
+
+        void on_server_event(io::Epoll &, uint32_t events, int fd); //Thread safe
+
+        void on_client_event(io::Epoll &, uint32_t events, int client_fd);//Thread safe
+
+        io::Epoll &poller_;
+
+        io::ConnectionManager::Ptr server_;
+
+        int server_fd_ = -1;
+
+        bool running_ = false;
+    };
+
 }
+
 #endif //IO_ASYNC_H
