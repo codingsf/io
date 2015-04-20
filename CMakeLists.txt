@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.4)
 project(IO)
 set(VERSION_MAJOR "0")
 set(VERSION_MINOR "2")
-set(VERSION_PATCH "3")
+set(VERSION_PATCH "4")
 set(VERSION "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
 set(DESCRIPTION "Common UNIX IO library for C++11")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11  -Wall")
@@ -20,7 +20,7 @@ if(NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE MATCHES "[Dd][Ee][Bb][Uu][Gg]")
 endif()
 
 if(EXPERIMENTAL)
-    list(APPEND SOURCE_FILES src/experimental.h src/experimental.cpp)
+    list(APPEND SOURCE_FILES src/experimental.cpp)
 endif()
 
 # Shared library
