@@ -11,6 +11,17 @@
 namespace io {
     const std::string &version();
 
+    template<size_t sz = 1024>
+    static inline std::string ngetline(std::istream &in) {
+        char text[sz];
+        size_t ln;
+        memset(text, 0, sz);
+        in.getline(text, sz - 1);
+        ln = strnlen(text, sz);
+        if (ln > 0 && text[ln - 1] == '\r')--ln;
+        return std::string(text, ln);
+    }
+
     struct Storage {
         Storage();
 
