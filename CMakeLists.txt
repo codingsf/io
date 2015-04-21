@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.4)
 project(IO)
 set(VERSION_MAJOR "0")
 set(VERSION_MINOR "2")
-set(VERSION_PATCH "4")
+set(VERSION_PATCH "5")
 set(VERSION "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
 set(DESCRIPTION "Common UNIX IO library for C++11")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11  -Wall")
@@ -10,7 +10,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -O3 -march=native"
 
 include(CMake-install-headers.txt)
 
-set(SOURCE_FILES  src/io.cpp src/async.cpp src/application.cpp)
+set(SOURCE_FILES  src/io.cpp src/async.cpp src/application.cpp src/serial.cpp)
 set(HEADERS_LIST  ${IO_HEADERS})
 set(RUNTIME_DEPS )
 

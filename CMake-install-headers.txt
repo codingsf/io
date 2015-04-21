@@ -1,4 +1,4 @@
-set(IO_HEADERS src/async.h src/concurrent.h src/io.h src/experimental.h src/application.h)
+set(IO_HEADERS src/async.h src/concurrent.h src/io.h src/experimental.h src/application.h src/serial.h)
 macro(IO_INSTALL_HEADERS location)
     install(FILES ${IO_HEADERS} DESTINATION ${location})
 endmacro(IO_INSTALL_HEADERS)
