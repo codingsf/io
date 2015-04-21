@@ -36,9 +36,14 @@ bool io::Serial::set_attributes(Speed speed, Parity parity, Bits bits) {
     tty.c_cflag |= static_cast<uint32_t>(bits);
 
     tty.c_cflag &= ~CRTSCTS;              // no flow control
-    tty.c_cc[VMIN] = 0;                   // 1 - nonblock
-    tty.c_cc[VTIME] = 1;                  // 1 seconds read timeout
+    tty.c_cc[VMIN] = 1;                   // 1 - nonblock
+    tty.c_cc[VTIME] = 5;                  // 1 seconds read timeout
     tty.c_cflag |= CREAD | CLOCAL;        // turn on READ & ignore ctrl lines
+    tcflush(descriptor_, TCIFLUSH);
 
+    if (tcsetattr(descriptor_, TCSANOW, &tty) != 0) {
+        set_error();
+        return false;
+    }
     return true;
 }
