@@ -198,6 +198,63 @@ namespace io {
         bool running_ = false;
     };
 
+
+    /**
+     * Universal IO interface for Epoll events: IN/ERR/HUP/RDHUP
+     */
+    struct AbstractAsyncFile {
+
+        /**
+         * Get underlying file stream
+         */
+        inline io::FileStream &file() { return file_d; }
+
+        /**
+         * Close file
+         */
+        void stop();
+
+        /**
+         * Close file
+         */
+        virtual  ~AbstractAsyncFile();
+
+    protected:
+        /**
+         * Initialize resources and register for epoll events if all is ok
+         */
+        AbstractAsyncFile(int fd, io::Epoll &epoll, uint32_t custom_events = 0);
+
+        /**
+         * When EPOLLIN events
+         */
+        virtual void on_data(io::FileStream &file) { }
+
+        /**
+         * On HUP, RDHUP, ERR. Closes stream after it.
+         */
+        virtual void on_close(io::FileStream &file) { }
+
+        /**
+         * Before file will be closed on stop function
+         */
+        virtual void on_stop(io::FileStream &file) { }
+
+        /**
+         * After adding in epoll events
+         */
+        virtual void on_start(io::FileStream &file) { }
+
+        /**
+         * On unrecognized event
+         */
+        virtual void on_event(io::FileStream &file) { }
+
+    private:
+        io::FileStream file_d;
+
+        void process_event(io::Epoll &ep, uint32_t events, int fd);
+    };
 }
 
 #endif //IO_ASYNC_H
