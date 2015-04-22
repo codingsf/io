@@ -7,10 +7,6 @@
 #include <unordered_map>
 
 io::Serial::Serial(const std::string &path) : path_(path) {
-    if (descriptor_ < 0) {
-        set_error();
-        return;
-    }
     set_auto_close(true);
 }
 
