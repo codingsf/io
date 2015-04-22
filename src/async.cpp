@@ -85,8 +85,10 @@ namespace io {
     AsyncSocketServer::AsyncSocketServer(io::Epoll &epoll, io::ConnectionManager::Ptr serv_con_) : poller_(epoll),
                                                                                                    server_(serv_con_),
                                                                                                    server_fd_(
-                                                                                                           serv_con_->descriptor()) {
-        running_ = poller_.has_valid_descriptor() &&
+                                                                                                           serv_con_ ?
+                                                                                                           serv_con_->descriptor()
+                                                                                                                     : -1) {
+        running_ = serv_con_ && poller_.has_valid_descriptor() &&
                    serv_con_->has_valid_descriptor() &&
                    poller_.add(server_fd_, EPOLLIN | EPOLLERR | EPOLLHUP | EPOLLRDHUP,
                                &AsyncSocketServer::on_server_event,
