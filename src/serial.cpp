@@ -7,7 +7,6 @@
 #include <unordered_map>
 
 io::Serial::Serial(const std::string &path) : path_(path) {
-    descriptor_ = open();
     if (descriptor_ < 0) {
         set_error();
         return;
@@ -15,12 +14,12 @@ io::Serial::Serial(const std::string &path) : path_(path) {
     set_auto_close(true);
 }
 
-bool io::Serial::open() {
+bool io::Serial::open(uint32_t flags) {
     if (is_open_) {
         set_error(ErrCodes::AlreadyOpened, "Already opened");
         return false;
     }
-    descriptor_ = ::open(path_.c_str(), O_RDWR | O_NOCTTY | O_NDELAY);
+    descriptor_ = ::open(path_.c_str(), flags);
     if (!has_valid_descriptor()) {
         set_error();
         return false;

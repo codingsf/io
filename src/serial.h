@@ -5,6 +5,7 @@
 #ifndef IO_SERIAL_H
 #define IO_SERIAL_H
 
+#include <fcntl.h>
 #include <termios.h>
 #include "io.h"
 
@@ -30,7 +31,7 @@ namespace io {
         /**
          * Open serial port
          */
-        bool open();
+        bool open(uint32_t flags = O_RDWR | O_NOCTTY | O_NDELAY | O_NONBLOCK);
 
         bool set_baud_rate(uint32_t rate);
 
