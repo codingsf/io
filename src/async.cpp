@@ -67,7 +67,7 @@ namespace io {
         return true;
     }
 
-    int Epoll::poll(uint32_t timeout) {
+    int Epoll::poll(int timeout) {
         if (!has_valid_descriptor()) {
             set_error(-1, "Invalid descriptor");
             return -1;

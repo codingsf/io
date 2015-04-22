@@ -44,7 +44,7 @@ namespace io {
          * Process events or unblock after `timeout` (in ms).
          * Returns count of processed events or less then 0 on error
          */
-        int poll(uint32_t timeout = 0);
+        int poll(int timeout = -1);
 
         /**
          * Add `callback` for descriptor `fd` with events `events_filter`.
