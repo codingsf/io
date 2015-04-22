@@ -248,7 +248,7 @@ namespace io {
         /**
          * On unrecognized event
          */
-        virtual void on_event(io::FileStream &file) { }
+        virtual void on_event(io::FileStream &file, uint32_t events) { }
 
     private:
         io::FileStream file_d;

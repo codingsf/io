@@ -173,7 +173,7 @@ namespace io {
         } else if (events & EPOLLIN) {
             on_data(file_d);
         } else {
-            on_event(file_d);
+            on_event(file_d, events);
         }
     }
 }
