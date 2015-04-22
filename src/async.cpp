@@ -155,9 +155,11 @@ namespace io {
     }
 
 
-    AbstractAsyncFile::AbstractAsyncFile(int fd, io::Epoll &epoll, uint32_t custom_events) : file_d(fd), epoll_(epoll) {
+    AbstractAsyncFile::AbstractAsyncFile(io::Storage &storage, io::Epoll &epoll, uint32_t custom_events) : file_d(
+            storage), epoll_(epoll) {
         if (file_d.has_valid_descriptor() && epoll.has_valid_descriptor() &&
-            epoll.add(fd, EPOLLIN | EPOLLERR | EPOLLRDHUP | EPOLLHUP | custom_events, &AbstractAsyncFile::process_event,
+            epoll.add(file_d.descriptor(), EPOLLIN | EPOLLERR | EPOLLRDHUP | EPOLLHUP | custom_events,
+                      &AbstractAsyncFile::process_event,
                       this)) {
             on_start();
         }

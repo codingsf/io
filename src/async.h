@@ -224,7 +224,7 @@ namespace io {
         /**
          * Initialize resources and register for epoll events if all is ok
          */
-        AbstractAsyncFile(int fd, io::Epoll &epoll, uint32_t custom_events = 0);
+        AbstractAsyncFile(io::Storage &storage, io::Epoll &epoll, uint32_t custom_events = 0);
 
         /**
          * When EPOLLIN events
@@ -252,7 +252,7 @@ namespace io {
         virtual void on_event(uint32_t events) { }
 
     private:
-        io::Storage file_d;
+        io::Storage &file_d;
 
         Epoll &epoll_;
 
