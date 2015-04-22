@@ -10,13 +10,17 @@
 
 namespace io {
     struct Serial : public io::Storage, public io::WithError {
+        enum ErrCodes : int {
+            InvalidBauds = -1,
+            AlreadyOpened = -2
+        };
+
         enum Profile {
             P_8N1, // No parity (8N1)
             P_7E1, // Even parity (7E1)
             P_7O1, // Odd parity (7O1)
             P_7S1  // Space parity
         };
-
 
         /**
          * Initialize resources and open
@@ -40,7 +44,12 @@ namespace io {
 
     private:
         std::string path_;
+
         bool is_open_ = false;
+
+        static speed_t get_speed_param(uint32_t speed);
     };
+
+
 }
 #endif //IO_SERIAL_H

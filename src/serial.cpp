@@ -4,6 +4,7 @@
 
 #include "serial.h"
 #include <fcntl.h>
+#include <unordered_map>
 
 io::Serial::Serial(const std::string &path) : path_(path) {
     descriptor_ = open();
@@ -16,7 +17,7 @@ io::Serial::Serial(const std::string &path) : path_(path) {
 
 bool io::Serial::open() {
     if (is_open_) {
-        set_error(-1, "Already opened");
+        set_error(ErrCodes::AlreadyOpened, "Already opened");
         return false;
     }
     descriptor_ = ::open(path_.c_str(), O_RDWR | O_NOCTTY | O_NDELAY);
@@ -30,6 +31,10 @@ bool io::Serial::open() {
 
 bool io::Serial::set_baud_rate(uint32_t rate) {
     if (!has_valid_descriptor() || !is_open()) return false;
+    if ((rate = get_speed_param(rate)) == B0) {
+        set_error(ErrCodes::InvalidBauds, "Invalid baud rate");
+        return false;
+    }
     struct termios options;
     if (tcgetattr(descriptor_, &options) < 0) {
         set_error();
@@ -41,7 +46,7 @@ bool io::Serial::set_baud_rate(uint32_t rate) {
         return false;
     }
     options.c_cflag |= (CLOCAL | CREAD);
-    if (tcsetattr(descriptor_, TCSAFLUSH, &options) < 0) {
+    if (tcsetattr(descriptor_, TCSANOW, &options) < 0) {
         set_error();
         return false;
     }
@@ -112,4 +117,29 @@ bool io::Serial::set_hardware_flow_control(bool enable) {
         return false;
     }
     return true;
+}
+
+speed_t io::Serial::get_speed_param(uint32_t speed) {
+    static const std::unordered_map<uint32_t, speed_t> speeds = {
+            {50,     B50},
+            {75,     B75},
+            {110,    B110},
+            {134,    B134},
+            {150,    B150},
+            {200,    B200},
+            {300,    B300},
+            {600,    B600},
+            {1200,   B1200},
+            {1800,   B1800},
+            {2400,   B2400},
+            {4800,   B4800},
+            {9600,   B9600},
+            {19200,  B19200},
+            {38400,  B38400},
+            {57600,  B57600},
+            {115200, B115200},
+    };
+    auto r = speeds.find(speed);
+    if (r != speeds.end()) return (*r).second;
+    return B0;
 }
