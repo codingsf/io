@@ -143,3 +143,11 @@ speed_t io::Serial::get_speed_param(uint32_t speed) {
     if (r != speeds.end()) return (*r).second;
     return B0;
 }
+
+bool io::Serial::set_blocking_mode(bool enable) {
+    if (!has_valid_descriptor() || !is_open()) return false;
+    if (enable) fcntl(descriptor_, F_SETFL, 0);
+    else fcntl(descriptor_, F_SETFL, FNDELAY);
+    return true;
+
+}

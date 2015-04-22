@@ -38,6 +38,8 @@ namespace io {
 
         bool set_hardware_flow_control(bool enable);
 
+        bool set_blocking_mode(bool enable);
+
         inline bool is_open() const { return is_open_; }
 
         inline const std::string &path() const { return path_; }
