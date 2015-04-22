@@ -254,6 +254,8 @@ namespace io {
     private:
         io::FileStream file_d;
 
+        Epoll &epoll_;
+
         void process_event(io::Epoll &ep, uint32_t events, int fd);
     };
 }
