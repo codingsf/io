@@ -34,15 +34,19 @@ namespace io {
         event.data.fd = fd;
         bool ok = epoll_ctl(descriptor_, EPOLL_CTL_ADD, fd, &event) == 0;
         if (ok) callbacks_[fd] = callback;
+        else set_error();
         return ok;
     }
 
     bool Epoll::remove(int fd) {
-        if (fd < 0)return false;
+        if (fd < 0) return false;
         auto callback = callbacks_.find(fd);
         if (callback == callbacks_.end())return false;
         callbacks_.erase(callback);
-        return has_valid_descriptor() && epoll_ctl(descriptor_, EPOLL_CTL_DEL, fd, nullptr) == 0;
+        if (!has_valid_descriptor()) return false;
+        bool ok = epoll_ctl(descriptor_, EPOLL_CTL_DEL, fd, nullptr) == 0;
+        if (!ok) set_error();
+        return ok;
     }
 
     bool Epoll::update(int fd, uint32_t events_filter) {
@@ -50,7 +54,9 @@ namespace io {
         epoll_event event;
         event.events = events_filter;
         event.data.fd = fd;
-        return epoll_ctl(descriptor_, EPOLL_CTL_MOD, fd, &event) == 0;
+        bool ok = epoll_ctl(descriptor_, EPOLL_CTL_MOD, fd, &event) == 0;
+        if (!ok) set_error();
+        return ok;
     }
 
     bool Epoll::update(int fd, Epoll::Callback &callback) {
@@ -62,7 +68,10 @@ namespace io {
     }
 
     int Epoll::poll(uint32_t timeout) {
-        if (!has_valid_descriptor() || has_error())return 0;
+        if (!has_valid_descriptor()) {
+            set_error(-1, "Invalid descriptor");
+            return -1;
+        }
         int res = epoll_wait(descriptor_, events_cache_.data(), events_cache_.size(), timeout);
         if (res >= 0)
             for (int i = 0; i < res; ++i) {
