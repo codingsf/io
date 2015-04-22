@@ -46,7 +46,7 @@ namespace io {
                     ++ln;
                     caret = false;
                 }
-                out << c;
+                out << (char) c;
                 ++ln;
             }
         }
