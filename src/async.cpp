@@ -159,14 +159,14 @@ namespace io {
         if (file_d.has_valid_descriptor() && epoll.has_valid_descriptor() &&
             epoll.add(fd, EPOLLIN | EPOLLERR | EPOLLRDHUP | EPOLLHUP | custom_events, &AbstractAsyncFile::process_event,
                       this)) {
-            on_start(file_d);
+            on_start();
         }
     }
 
     void AbstractAsyncFile::stop() {
         if (file_d.has_valid_descriptor()) {
             epoll_.remove(file_d.descriptor());
-            on_stop(file_d);
+            on_stop();
             file_d.close();
         }
     }
@@ -177,13 +177,13 @@ namespace io {
 
     void AbstractAsyncFile::process_event(io::Epoll &ep, uint32_t events, int fd) {
         if (events & (EPOLLERR | EPOLLHUP | EPOLLRDHUP)) {
-            on_close(file_d);
+            on_close();
             ep.remove(fd);
             file_d.close();
         } else if (events & EPOLLIN) {
-            on_data(file_d);
+            on_data();
         } else {
-            on_event(file_d, events);
+            on_event(events);
         }
     }
 }

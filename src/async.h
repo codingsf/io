@@ -208,7 +208,7 @@ namespace io {
         /**
          * Get underlying file stream
          */
-        inline io::FileStream &file() { return file_d; }
+        inline io::Storage &file() { return file_d; }
 
         /**
          * Close file
@@ -229,30 +229,30 @@ namespace io {
         /**
          * When EPOLLIN events
          */
-        virtual void on_data(io::FileStream &file) { }
+        virtual void on_data() { }
 
         /**
          * On HUP, RDHUP, ERR. Closes stream after it.
          */
-        virtual void on_close(io::FileStream &file) { }
+        virtual void on_close() { }
 
         /**
          * Before file will be closed on stop function
          */
-        virtual void on_stop(io::FileStream &file) { }
+        virtual void on_stop() { }
 
         /**
          * After adding in epoll events
          */
-        virtual void on_start(io::FileStream &file) { }
+        virtual void on_start() { }
 
         /**
          * On unrecognized event
          */
-        virtual void on_event(io::FileStream &file, uint32_t events) { }
+        virtual void on_event(uint32_t events) { }
 
     private:
-        io::FileStream file_d;
+        io::Storage file_d;
 
         Epoll &epoll_;
 
