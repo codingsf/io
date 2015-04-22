@@ -11,6 +11,9 @@
 namespace io {
     const std::string &version();
 
+    /**
+     * Get line with \r\n or \n as EOL.
+     */
     template<size_t sz = 1024>
     static inline std::string ngetline(std::istream &in) {
         char text[sz];
@@ -20,6 +23,33 @@ namespace io {
         ln = strnlen(text, sz);
         if (ln > 0 && text[ln - 1] == '\r')--ln;
         return std::string(text, ln);
+    }
+
+    /**
+     * Get line with \r\n or \n as EOL to stream. Returns count of written bytes
+     */
+    static inline size_t ngetline(std::istream &in, std::ostream &out, size_t sz) {
+        size_t ln = 0;
+        char p;
+        int c;
+        bool caret = false;
+        for (size_t i = 0; i < sz && !in.eof(); ++i) {
+            c = in.get();
+            if (c < 0) break;
+            if (c == '\n') break; // EOL
+            else if (c == '\r') { //Possible first char before EOL
+                p = c;
+                caret = true;
+            } else {
+                if (caret) {
+                    out << p;
+                    ++ln;
+                    caret = false;
+                }
+                out << c;
+                ++ln;
+            }
+        }
     }
 
     struct Storage {
