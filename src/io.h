@@ -50,6 +50,7 @@ namespace io {
                 ++ln;
             }
         }
+        return ln;
     }
 
     struct Storage {
