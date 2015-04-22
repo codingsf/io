@@ -5,43 +5,109 @@
 #include "serial.h"
 #include <fcntl.h>
 
-io::Serial::Serial(const std::string &path) {
-    descriptor_ = open(path.c_str(), O_RDWR | O_NOCTTY);
+io::Serial::Serial(const std::string &path) : path_(path) {
+    descriptor_ = open();
     if (descriptor_ < 0) {
         set_error();
         return;
     }
     set_auto_close(true);
-    set_attributes();
 }
 
-bool io::Serial::set_attributes(Speed speed, Parity parity, Bits bits) {
-    if (has_error() || !has_valid_descriptor())return false;
-    struct termios tty;
-    memset(&tty, 0, sizeof tty);
-
-    /* Error Handling */
-    if (tcgetattr(descriptor_, &tty) != 0) {
+bool io::Serial::open() {
+    if (is_open_) {
+        set_error(-1, "Already opened");
+        return false;
+    }
+    descriptor_ = ::open(path_.c_str(), O_RDWR | O_NOCTTY | O_NDELAY);
+    if (!has_valid_descriptor()) {
         set_error();
         return false;
     }
-    /* Set Baud Rate */
-    cfsetospeed(&tty, static_cast<speed_t>(speed));
-    cfsetispeed(&tty, static_cast<speed_t>(speed));
+    fcntl(descriptor_, F_SETFL, 0); //Blocking model
+    return (is_open_ = true);
+}
 
-    /* Setting other Port Stuff */
-    tty.c_cflag &= ~static_cast<uint32_t>(parity);               // Make 8n1
-    tty.c_cflag &= ~CSTOPB;
-    tty.c_cflag &= ~CSIZE;
-    tty.c_cflag |= static_cast<uint32_t>(bits);
+bool io::Serial::set_baud_rate(uint32_t rate) {
+    if (!has_valid_descriptor() || !is_open()) return false;
+    struct termios options;
+    if (tcgetattr(descriptor_, &options) < 0) {
+        set_error();
+        return false;
+    }
+    if (cfsetospeed(&options, rate) < 0 ||
+        cfsetospeed(&options, rate) < 0) {
+        set_error();
+        return false;
+    }
+    options.c_cflag |= (CLOCAL | CREAD);
+    if (tcsetattr(descriptor_, TCSAFLUSH, &options) < 0) {
+        set_error();
+        return false;
+    }
+    return true;
+}
 
-    tty.c_cflag &= ~CRTSCTS;              // no flow control
-    tty.c_cc[VMIN] = 1;                   // 1 - nonblock
-    tty.c_cc[VTIME] = 5;                  // 1 seconds read timeout
-    tty.c_cflag |= CREAD | CLOCAL;        // turn on READ & ignore ctrl lines
-    tcflush(descriptor_, TCIFLUSH);
+bool io::Serial::set_profile(Profile profile) {
+    if (!has_valid_descriptor() || !is_open()) return false;
+    struct termios options;
+    if (tcgetattr(descriptor_, &options) < 0) {
+        set_error();
+        return false;
+    }
 
-    if (tcsetattr(descriptor_, TCSANOW, &tty) != 0) {
+    switch (profile) {
+        case Profile::P_8N1: {
+            options.c_cflag &= ~PARENB;
+            options.c_cflag &= ~CSTOPB;
+            options.c_cflag &= ~CSIZE;
+            options.c_cflag |= CS8;
+            break;
+        };
+        case Profile::P_7E1: {
+            options.c_cflag |= PARENB;
+            options.c_cflag &= ~PARODD;
+            options.c_cflag &= ~CSTOPB;
+            options.c_cflag &= ~CSIZE;
+            options.c_cflag |= CS7;
+            break;
+        };
+        case Profile::P_7O1: {
+            options.c_cflag |= PARENB;
+            options.c_cflag |= PARODD;
+            options.c_cflag &= ~CSTOPB;
+            options.c_cflag &= ~CSIZE;
+            options.c_cflag |= CS7;
+            break;
+        };
+        case Profile::P_7S1: {
+            options.c_cflag &= ~PARENB;
+            options.c_cflag &= ~CSTOPB;
+            options.c_cflag &= ~CSIZE;
+            options.c_cflag |= CS8;
+            break;
+        };
+
+    }
+    if (tcsetattr(descriptor_, TCSAFLUSH, &options) < 0) {
+        set_error();
+        return false;
+    }
+    return true;
+}
+
+bool io::Serial::set_hardware_flow_control(bool enable) {
+    if (!has_valid_descriptor() || !is_open()) return false;
+    struct termios options;
+    if (tcgetattr(descriptor_, &options) < 0) {
+        set_error();
+        return false;
+    }
+    if (enable)
+        options.c_cflag |= CRTSCTS;
+    else
+        options.c_cflag &= ~CRTSCTS;
+    if (tcsetattr(descriptor_, TCSAFLUSH, &options) < 0) {
         set_error();
         return false;
     }

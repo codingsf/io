@@ -10,40 +10,13 @@
 
 namespace io {
     struct Serial : public io::Storage, public io::WithError {
-        /**
-         * Byte size
-         */
-        enum class Bits : uint32_t {
-            CS_8 = CS8, CS_7 = CS7, CS_6 = CS6, CS_5 = CS5
+        enum Profile {
+            P_8N1, // No parity (8N1)
+            P_7E1, // Even parity (7E1)
+            P_7O1, // Odd parity (7O1)
+            P_7S1  // Space parity
         };
 
-        /**
-         * Control parity
-         */
-        enum class Parity : uint32_t {
-            ODD = PARODD, MARK = PARMRK, NONE = PARENB
-        };
-
-        /**
-         * Baud speed rate
-         */
-        enum class Speed : uint32_t {
-            B_50 = B50,
-            B_74 = B75,
-            B_110 = B110,
-            B_134 = B134,
-            B_150 = B150,
-            B_200 = B200,
-            B_300 = B300,
-            B_600 = B600,
-            B_1200 = B1200,
-            B_1800 = B1800,
-            B_2400 = B2400,
-            B_4800 = B4800,
-            B_9600 = B9600,
-            B_19200 = B19200,
-            B_38400 = B38400
-        };
 
         /**
          * Initialize resources and open
@@ -51,20 +24,23 @@ namespace io {
         Serial(const std::string &path);
 
         /**
-         * Set serial port attributes: baud rate, control parity and byte size
+         * Open serial port
          */
-        bool set_attributes(Speed speed = Speed::B_9600, Parity parity = Parity::NONE, Bits bits = Bits::CS_8);
+        bool open();
 
-        inline Speed speed() const { return speed_; }
+        bool set_baud_rate(uint32_t rate);
 
-        inline Parity parity() const { return parity_; }
+        bool set_profile(Profile profile);
 
-        inline Bits bits() const { return bits_; }
+        bool set_hardware_flow_control(bool enable);
+
+        inline bool is_open() const { return is_open_; }
+
+        inline const std::string &path() const { return path_; }
 
     private:
-        Speed speed_;
-        Parity parity_;
-        Bits bits_;
+        std::string path_;
+        bool is_open_ = false;
     };
 }
 #endif //IO_SERIAL_H
